@@ -5,6 +5,19 @@ import { askGemini } from "../services/gemini.service";
 import { sendTelegramMessage } from "../services/telegram.service";
 import { pg } from "../config/postgres";
 
+function normalizeText(input: any): string {
+  if (!input) return "⚠️ Empty response";
+
+  if (typeof input === "string") return input;
+
+  try {
+    return JSON.stringify(input, null, 2);
+  } catch {
+    return String(input);
+  }
+}
+
+
 new Worker(
   "ai-queue",
   async (job) => {
@@ -44,14 +57,28 @@ new Worker(
         throw new Error("Empty AI response");
     }
 
+    const safeText = normalizeText(response);
+
+    // potong kalau terlalu panjang
+    const finalText =
+      safeText.length > 4000
+        ? safeText.slice(0, 4000) + "\n\n...(truncated)"
+        : safeText;
+
+
     // ===============================
     // 🔹 TELEGRAM
     // ===============================
-    await sendTelegramMessage(
-      telegram_bot_key,
-      telegram_receiver_id,
-      response
-    );
+    
+    const sentKey = `telegram:sent:${jobId}`;
+    if (!(await redis.get(sentKey))) {
+      await sendTelegramMessage(
+        telegram_bot_key,
+        telegram_receiver_id,
+        finalText
+      );
+      await redis.set(sentKey, "1", "EX", 86400);
+    }
 
     // ===============================
     // 🔹 POSTGRES LOG
