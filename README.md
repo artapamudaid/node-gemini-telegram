@@ -244,7 +244,7 @@ docker-compose.yml
 services:
   api:
     build: 
-    command: node dist/index.js
+    command: node dist/server.js
     ports:
       - "3000:3000"
     env_file:
