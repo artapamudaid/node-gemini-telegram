@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import { aiRoute } from "./routes/ai.route";
+import { sendRoute } from "./routes/send.route";
 import { staticKeyAuth } from "./middleware/auth.middleware";
 import { rateLimit } from "./middleware/rateLimit.middleware";
 
@@ -13,3 +14,4 @@ app.use(rateLimit);
 app.use(staticKeyAuth);
 
 app.use("/api/ai", aiRoute);
+app.use("/api/send", sendRoute);

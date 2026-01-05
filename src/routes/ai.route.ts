@@ -11,6 +11,7 @@ aiRoute.post("/ask", async (req, res) => {
     gemini_api_key,
     prompt,
     payloads,
+    message_thread_id,
   } = req.body;
 
   const jobId = uuid();
@@ -24,6 +25,7 @@ aiRoute.post("/ask", async (req, res) => {
       gemini_api_key,
       prompt,
       payloads,
+      message_thread_id
     },
     {
       attempts: 3,

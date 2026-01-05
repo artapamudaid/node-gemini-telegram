@@ -5,12 +5,14 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon --exec ts-node src/server.ts",
-    "worker": "nodemon --exec ts-node src/worker/ai.worker.ts",
+    "ai-worker": "nodemon --exec ts-node src/worker/ai.worker.ts",
+    "send-worker": "nodemon --exec ts-node src/worker/send.worker.ts",
 
     "build": "tsc",
 
     "start": "node dist/index.js",
-    "start:worker": "node dist/worker/ai.worker.js"
+    "start:ai-worker": "node dist/worker/ai.worker.js",
+    "start:send-worker": "node dist/worker/send.worker.js"
   },
   "keywords": [
     "gemini",
