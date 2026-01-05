@@ -1,17 +1,24 @@
-# Gemini AI → Telegram Bot Service
+# Telegram Bot Service
 
-Aplikasi Node.js untuk memproses prompt menggunakan Google Gemini AI dan mengirimkan hasil respons langsung ke Telegram melalui Bot API. Cocok untuk kebutuhan laporan otomatis, notifikasi presensi, ringkasan data, dan pesan AI berbasis template.
+Service Aplikasi Node.js untuk memproses pengiriman pesan ke telegram personal ataupun grup (bisa ke topik/thread juga) menggunakan redis untuk cache dan queue dan BullMQ Worker.
 
 ---
 
 ## Deskripsi
 
-Gemini AI → Telegram Bot Service adalah REST API berbasis Node.js yang menerima request JSON berisi prompt dan payload data, memprosesnya menggunakan Google Gemini AI, lalu mengirimkan hasil teks ke Telegram secara otomatis.
+Telegram Bot Service adalah REST API berbasis Node.js yang menerima request kemudia mengirimkan hasil teks ke Telegram secara otomatis.
 
 Aplikasi ini dirancang untuk:
 - Output teks polos aman untuk Telegram
 - Pemrosesan asynchronous (queue-based)
 - Mudah diintegrasikan dengan sistem lain (PHP, Laravel, Go, Pytho, Node, dll)
+
+---
+
+
+## Kirim dengan Gemini AI
+
+ Dapat proses prompt menggunakan Google Gemini AI dan mengirimkan hasil respons langsung ke Telegram melalui Bot API. Cocok untuk kebutuhan laporan otomatis, notifikasi presensi, ringkasan data, dan pesan AI berbasis template.
 
 ---
 
@@ -78,6 +85,8 @@ Kemudian sesuaikan isinya
 
 ### 4. Jalankan Aplikasi
 
+#### a. Development
+
 Jalankan Redis Server
 
 ```bash
@@ -88,18 +97,42 @@ redis-server
 npm run dev
 ```
 
-Atau mode production:
+Jalankan AI worker
+
+```bash
+npm run ai-worker
+```
+
+Jalankan Send worker
+
+```bash
+npm run send-worker
+```
+
+#### b. Production
+
+Jalankan Redis Server
+
+```bash
+redis-server
+```
 
 ```bash
 npm start
 ```
-Jalankan worker
+Jalankan AI worker
 
 ```bash
-npm start worker
+npm start ai-worker
 ```
 
-API akan berjalan default di port 3000:
+Jalankan Send worker
+
+```bash
+npm start send-worker
+```
+
+#### c. API akan berjalan default di port 3000:
 
 ```bash
 http://localhost:3000
@@ -107,6 +140,8 @@ http://localhost:3000
 
 
 ## Contoh Endpoint API
+
+### Kirim pakai Gemini AI
 
 **POST** <mark>/api/ai/ask</mark>
 
@@ -126,6 +161,30 @@ x-secret-key: SUPER_SECRET_KEY
   "gemini_api_key": "GEMINI_API_KEY",
   "prompt": "Prompt instruksi AI",
   "payloads": {}
+  "message_thread_id": "isi dengan id thread di grup (INTEGER) atau NULL jika tidak kirim ke topik/thread"
+}
+```
+
+### Kirim langsung (tanpa Gemini AI)
+
+
+**POST** <mark>/api/send/message</mark>
+
+**Header**
+
+```bash
+Content-Type: application/json
+x-secret-key: SUPER_SECRET_KEY
+```
+
+
+**Body**
+```bash
+{
+  "telegram_bot_key": "BOT_TOKEN",
+  "telegram_receiver_id": "CHAT_ID",
+  "text": "PESAN ANDA",
+  "message_thread_id": "isi dengan id thread di grup (INTEGER) atau NULL jika tidak kirim ke topik/thread"
 }
 ```
 
@@ -145,8 +204,9 @@ redis-server
 ### 3. Jalankan Aplikasi
 
 ```bash
-pm2 start src/index.ts --name gemini-api
-pm2 start src/worker/ai.worker.ts --name gemini-worker
+pm2 start src/index.ts --name telegram-sender
+pm2 start src/worker/ai.worker.ts --name ai-worker
+pm2 start src/worker/send.worker.ts --name send-worker
 ```
 
 ### 4. Simpan Konfigurasi
@@ -165,8 +225,9 @@ pm2 list
 Harus terlihat:
 
 ```bash
-gemini-api     online
-gemini-worker  online
+telegram-sender  online
+ai-worker        online
+send-worker      online
 ```
 
 ## Deployment Dengan Docker
@@ -191,9 +252,17 @@ services:
     depends_on:
       - redis
 
-  worker:
+  ai-worker:
     build: .
     command: node dist/worker/ai.worker.js
+    env_file:
+      - .env
+    depends_on:
+      - redis
+
+  send-worker:
+    build: .
+    command: node dist/worker/send.worker.js
     env_file:
       - .env
     depends_on:
